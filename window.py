@@ -2,6 +2,7 @@
 
 
 
+
 import sys
 #1 meter per second is 26.8224 miutes per mile
 #1609.34 meters per mile
@@ -65,6 +66,34 @@ def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, 
     timeadj = distcoef * deltat
     return (timeadj + timestampEndLast) - timestampStart
 
+def minTimeForDist(diststamp, timestamp, distsel):
+#Find minimal time for selected distance
+    mintime = None
+    mini = None  #minimal start element
+    minj = None  #minimal finish element
+    i = 0
+    while (i < len(timestamp)):
+        deltad = 0
+        deltat = 0
+        j = i
+        while j < len(timestamp):
+            deltad = float(diststamp[j]) - float(diststamp[i])
+            deltat = float(timestamp[j]) - float(timestamp[i])
+            if deltad > distsel:
+                #This is where intermediate distance function would go to get deltat
+		deltat = interp_dist(diststamp[j], diststamp[j-1], timestamp[j], timestamp[j-1], distsel, diststamp[i], timestamp[i])
+		if deltat < mintime or mintime == None:
+                    mintime = deltat
+                    mini = i
+                    minj = j
+                j = len(timestamp)
+            j = j + 1
+        i = i + 1
+
+    timestr = str(int(mintime / 60)) + ":" + str((mintime % 60))
+    print timestr
+    result = [mintime, mini, minj]
+    return result
 
 infile = open("samp.tcx", "r")
 
@@ -106,44 +135,12 @@ for line in infile:
 			speedstamp.append(speedCalc(float(allInSec), float(dist), float(allInSecOld) - 0.001, float(distOld)))
 infile.close()
 
+result = minTimeForDist(diststamp, timestamp, distsel)
+#result = [mintime, mini, minj]
 
-#Find minimal time for selected distance
-mintime = None
-mini = None  #minimal start element
-minj = None  #minimal finish element
-i = 0
-while (i < len(timestamp)):
-	deltad = 0
-	deltat = 0
-	j = i
-	while j < len(timestamp):
-		deltad = float(diststamp[j]) - float(diststamp[i])
-		deltat = float(timestamp[j]) - float(timestamp[i])
-		if deltad > distsel:
-            #This is where intermediate distance function would go to get deltat
-            		deltat = interp_dist(diststamp[j], diststamp[j-1], timestamp[j], timestamp[j-1], distsel, diststamp[i], timestamp[i])
-			if deltat < mintime or mintime == None:
-				mintime = deltat
-				mini = i
-				minj = j
-			j = len(timestamp)
-		j = j + 1
-	i = i + 1
+mini = result[1]
+minj = result[2]
 
-timestr = str(int(mintime / 60)) + ":" + str((mintime % 60))
-print timestr
-
-
-#Old Velocity Calc, Now in file read loop
-'''
-i = 0
-while i < len(timestamp):
-    if i == 0:
-        speedstamp.append(speedCalc(timestamp[i], diststamp[i], timestamp[i] - 0.0001, diststamp[i]))
-    else:
-        speedstamp.append(speedCalc(timestamp[i], diststamp[i], timestamp[i - 1] - 0.0001, diststamp[i - 1]))
-    i = i + 1
-'''
 
 #matplotlib stuff
 X = diststamp
