@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 
+
 import sys
 #1 meter per second is 26.8224 miutes per mile
 #1609.34 meters per mile
@@ -53,6 +54,16 @@ def paceFilter (paceAry):
 #paceFiltered.append((paceAry[i - 2] + paceAry[i - 1] + paceAry[i] + paceAry[i + 1] + paceAry[i + 2]) / 5)
         i = i + 1
     return paceFiltered
+
+def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, distsel, diststampStart, timestampStart):
+    deltat = timestampEnd - timestampEndLast
+    deltad = diststampEnd - diststampStart
+    deltadLast = diststampEndLast - diststampStart
+    dif = deltad - deltadLast
+    difLast = distsel - deltadLast
+    distcoef = difLast / dif
+    timeadj = distcoef * deltat
+    return (timeadj + timestampEndLast) - timestampStart
 
 
 infile = open("samp.tcx", "r")
@@ -109,6 +120,8 @@ while (i < len(timestamp)):
 		deltad = float(diststamp[j]) - float(diststamp[i])
 		deltat = float(timestamp[j]) - float(timestamp[i])
 		if deltad > distsel:
+            #This is where intermediate distance function would go to get deltat
+            		deltat = interp_dist(diststamp[j], diststamp[j-1], timestamp[j], timestamp[j-1], distsel, diststamp[i], timestamp[i])
 			if deltat < mintime or mintime == None:
 				mintime = deltat
 				mini = i
