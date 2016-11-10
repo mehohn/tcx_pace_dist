@@ -1,8 +1,6 @@
 #! /usr/bin/env python
 
 
-
-
 import sys
 #1 meter per second is 26.8224 miutes per mile
 #1609.34 meters per mile
@@ -13,10 +11,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 METER_PER_MILE = 1609.34
-
+METER_PER_KILO = 1000
 
 distsel = 1000
-intrack = 0
 intrackpoint = 0
 timestamp = []
 diststamp = []
@@ -66,6 +63,18 @@ def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, 
     timeadj = distcoef * deltat
     return (timeadj + timestampEndLast) - timestampStart
 
+def secToMinAry(timeSec):
+    minuteAry = []
+    for sample in timeSec:
+        minuteAry.append((sample / 60))
+    return minuteAry
+
+def meterToK(dist):
+    kAry = []
+    for sample in dist:
+        kAry.append((sample / 1000))
+    return kAry
+
 def minTimeForDist(diststamp, timestamp, distsel):
 #Find minimal time for selected distance
     mintime = None
@@ -78,9 +87,8 @@ def minTimeForDist(diststamp, timestamp, distsel):
         j = i
         while j < len(timestamp):
             deltad = float(diststamp[j]) - float(diststamp[i])
-            deltat = float(timestamp[j]) - float(timestamp[i])
+            #deltat = float(timestamp[j]) - float(timestamp[i])
             if deltad > distsel:
-                #This is where intermediate distance function would go to get deltat
 		deltat = interp_dist(diststamp[j], diststamp[j-1], timestamp[j], timestamp[j-1], distsel, diststamp[i], timestamp[i])
 		if deltat < mintime or mintime == None:
                     mintime = deltat
@@ -89,9 +97,6 @@ def minTimeForDist(diststamp, timestamp, distsel):
                 j = len(timestamp)
             j = j + 1
         i = i + 1
-
-    timestr = str(int(mintime / 60)) + ":" + str((mintime % 60))
-    print timestr
     result = [mintime, mini, minj]
     return result
 
@@ -100,10 +105,6 @@ infile = open("samp.tcx", "r")
 for line in infile:
 	linespl = line.strip()
     #set flags for tcx samples
-	if (linespl == "<Track>"):
-		intrack = 1
-	if (linespl == "</Track>"):
-		intrack = 0
 	if (linespl == "<Trackpoint>"):
 		intrackpoint = 1
 	if (linespl == "</Trackpoint>"):
@@ -140,18 +141,23 @@ result = minTimeForDist(diststamp, timestamp, distsel)
 
 mini = result[1]
 minj = result[2]
-
+mintime = result[0]
+timestr = str(int(mintime / 60)) + ":" + str((mintime % 60))
+print timestr
 
 #matplotlib stuff
-X = diststamp
 
+D = meterToK(diststamp)
 S = paceFilter(speedstamp)
 
-a = diststamp[mini] #hilight start
-b = diststamp[minj] #hilight end
-                
+a = D[mini]
+b = D[minj]
+c = timestamp[mini] #hilight start time
+d = timestamp[minj] #hilight end time
+
+
 plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
-plt.plot(X,S)
+plt.plot(D,S)
 plt.gca().invert_yaxis()
 plt.gca().grid(True)
 plt.xlabel("Distance - Time for Distance: %s" % timestr)
