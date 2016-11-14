@@ -10,9 +10,9 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-
+#Constants.
 FILENAME = "samp.tcx"
-
+MEANMAX_INC = 10
 
 
 METER_PER_MILE = 1609.34
@@ -32,21 +32,23 @@ distOld = 0
 timestr = ""
 
 def speedCalc (tsamp, dsamp, tsampPrev, dsampPrev):
-    #use difference in distance and differece in time
+    #Use difference in distance and differece in time
     #to calculate the pace between two samples.
     deld = dsamp - dsampPrev
     delt = tsamp - tsampPrev
-    mps = float(deld / delt) #meters per second
-    #accomodate div/0
+    
+    #Meters per Second.
+    mps = float(deld / delt)
+    
+    #Accomodate div/0.
     if mps == 0:
         return 0
     else:
         return (26.8224 / mps)
-#mps / 1609.34 = mile per second
-#*60 mile per mile
+        #mps / 1609.34 = mile per second.
 
 def paceFilter (paceAry):
-    #moving window filter to remove bogus samples
+    #Moving window filter to remove bogus samples.
     i = 0
     paceFiltered = []
     while i < len(paceAry):
@@ -56,12 +58,12 @@ def paceFilter (paceAry):
             paceFiltered.append((paceAry[i] + paceAry[i - 1] + paceAry[i - 2]) / 3)
         else:
             paceFiltered.append((paceAry[i - 1] + paceAry[i] + paceAry[i + 1]) / 3)
-#paceFiltered.append((paceAry[i - 2] + paceAry[i - 1] + paceAry[i] + paceAry[i + 1] + paceAry[i + 2]) / 5)
         i = i + 1
     return paceFiltered
 
 def meanMax(diststamp, timestamp):
-    maxdist = diststamp[len(diststamp) - 1] #distance total
+    maxdist = diststamp[len(diststamp) - 1]
+    #Mean max time, distance, pace.
     MMT = []
     MMD = []
     MMP = []
@@ -69,18 +71,20 @@ def meanMax(diststamp, timestamp):
     while i < maxdist:
         MMD.append(i)
         timer = minTimeForDist(diststamp, timestamp, i)[0]
-        if timer == None:
+        if timer ==0 or timer == None:
             MMT.append(0)
         else:
             MMT.append((timer)/60)
-        if timer == 0:
+        if timer == 0 or timer == None:
             MMP.append(0)
         else:
             MMP.append(26.8224 / (i / timer))
-        i = i + 50
+        i = i + MEANMAX_INC
     return [MMT, MMD, MMP]
 
 def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, distsel, diststampStart, timestampStart):
+    #Interpolate the finish time for selected distance if that distance falls
+    #between two samples.
     deltat = timestampEnd - timestampEndLast
     deltad = diststampEnd - diststampStart
     deltadLast = diststampEndLast - diststampStart
@@ -155,6 +159,7 @@ for line in infile:
 		dist = linespl.split("<DistanceMeters>")
 		dist = dist[1].split("</DistanceMeters>")
 		dist = dist[0]
+        #Append time, dist, speed to sample lists.
 		timestamp.append(float(allInSec))
 		diststamp.append(float(dist))
 		if len(diststamp) == 1:
@@ -165,17 +170,21 @@ infile.close()
 
 result = minTimeForDist(diststamp, timestamp, distsel)
 #result = [mintime, mini, minj]
-#mean maximal pace
+#Mean maximal pace.
 #return [MMT, MMD, MMP]
 MMR = meanMax(diststamp, timestamp)
 mini = result[1]
 minj = result[2]
 mintime = result[0]
-timestr = str(int(mintime / 60)) + ":" + str((mintime % 60))
+minpace = (26.8224 / (distsel / mintime))
+minpaceClk = ((26.8224 / (distsel / mintime)) % 1) * 60
+
+pacestr = str(int(minpace / 1)) + ":" + "%.2f" % (minpaceClk)
+timestr = str(int(mintime / 60)) + ":" + "%.2f" % (mintime % 60)
 print timestr
+print pacestr
 
-#matplotlib stuff
-
+#Matplotlib stuff.
 D = meterToK(diststamp)
 S = paceFilter(speedstamp)
 
@@ -200,7 +209,7 @@ plt.axvspan(0, distsel, color='b', alpha=0.25, lw=2)
 plt.plot(MMR[1],MMR[2], 'r', lw = 1.5, alpha = 0.8)
 #plt.xscale('log')
 plt.gca().grid(True)
-plt.xlabel("Distance")
+plt.xlabel("Distance - Pace for Distance: %s" % pacestr)
 plt.ylabel('Pace')
 plt.yticks(np.arange(min(MMR[2]), max(MMR[2])+1, 1))
 
