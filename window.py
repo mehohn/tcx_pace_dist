@@ -53,6 +53,26 @@ def paceFilter (paceAry):
         i = i + 1
     return paceFiltered
 
+def meanMax(diststamp, timestamp):
+    maxdist = diststamp[len(diststamp) - 1] #distance total
+    MMT = []
+    MMD = []
+    MMP = []
+    i = 0
+    while i < maxdist:
+        MMD.append(i)
+        timer = minTimeForDist(diststamp, timestamp, i)[0]
+        if timer == None:
+            MMT.append(0)
+        else:
+            MMT.append((timer)/60)
+        if timer == 0:
+            MMP.append(0)
+        else:
+            MMP.append(26.8224 / (i / timer))
+        i = i + 100
+    return [MMT, MMD, MMP]
+
 def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, distsel, diststampStart, timestampStart):
     deltat = timestampEnd - timestampEndLast
     deltad = diststampEnd - diststampStart
@@ -100,7 +120,7 @@ def minTimeForDist(diststamp, timestamp, distsel):
     result = [mintime, mini, minj]
     return result
 
-infile = open("samp.tcx", "r")
+infile = open("samp2.tcx", "r")
 
 for line in infile:
 	linespl = line.strip()
@@ -138,7 +158,8 @@ infile.close()
 
 result = minTimeForDist(diststamp, timestamp, distsel)
 #result = [mintime, mini, minj]
-
+#mean maximal pace
+MMR = meanMax(diststamp, timestamp)
 mini = result[1]
 minj = result[2]
 mintime = result[0]
@@ -155,7 +176,7 @@ b = D[minj]
 c = timestamp[mini] #hilight start time
 d = timestamp[minj] #hilight end time
 
-
+plt.subplot(3, 1, 1)
 plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
 plt.plot(D,S)
 plt.gca().invert_yaxis()
@@ -163,5 +184,24 @@ plt.gca().grid(True)
 plt.xlabel("Distance - Time for Distance: %s" % timestr)
 plt.ylabel('Pace')
 plt.yticks(np.arange(min(S), max(S)+1, 0.5))
+
+plt.subplot(3, 1, 2)
+#plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
+plt.plot(MMR[1],MMR[2], 'r')
+#plt.gca().invert_yaxis()
+plt.gca().grid(True)
+plt.xlabel("Distance")
+plt.ylabel('Pace')
+plt.yticks(np.arange(min(MMR[2]), max(MMR[2])+1, 1))
+
+
+plt.subplot(3, 1, 3)
+#plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
+plt.plot(MMR[1],MMR[0], 'g')
+#plt.gca().invert_yaxis()
+plt.gca().grid(True)
+plt.xlabel("Distance")
+plt.ylabel('Time')
+plt.yticks(np.arange(min(MMR[0]), max(MMR[0])+1, 5))
 
 plt.show()
