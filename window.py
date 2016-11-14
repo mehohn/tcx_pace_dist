@@ -10,8 +10,15 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
+
+FILENAME = "samp.tcx"
+
+
+
 METER_PER_MILE = 1609.34
 METER_PER_KILO = 1000
+
+
 
 distsel = 1000
 intrackpoint = 0
@@ -70,7 +77,7 @@ def meanMax(diststamp, timestamp):
             MMP.append(0)
         else:
             MMP.append(26.8224 / (i / timer))
-        i = i + 100
+        i = i + 50
     return [MMT, MMD, MMP]
 
 def interp_dist(diststampEnd, diststampEndLast, timestampEnd, timestampEndLast, distsel, diststampStart, timestampStart):
@@ -92,7 +99,7 @@ def secToMinAry(timeSec):
 def meterToK(dist):
     kAry = []
     for sample in dist:
-        kAry.append((sample / 1000))
+        kAry.append((sample / METER_PER_KILO))
     return kAry
 
 def minTimeForDist(diststamp, timestamp, distsel):
@@ -120,7 +127,7 @@ def minTimeForDist(diststamp, timestamp, distsel):
     result = [mintime, mini, minj]
     return result
 
-infile = open("samp2.tcx", "r")
+infile = open(FILENAME, "r")
 
 for line in infile:
 	linespl = line.strip()
@@ -159,6 +166,7 @@ infile.close()
 result = minTimeForDist(diststamp, timestamp, distsel)
 #result = [mintime, mini, minj]
 #mean maximal pace
+#return [MMT, MMD, MMP]
 MMR = meanMax(diststamp, timestamp)
 mini = result[1]
 minj = result[2]
@@ -177,18 +185,20 @@ c = timestamp[mini] #hilight start time
 d = timestamp[minj] #hilight end time
 
 plt.subplot(3, 1, 1)
+plt.title('Pace')
 plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
-plt.plot(D,S)
+plt.plot(D,S, 'b', lw = 1.5, alpha = 0.8)
 plt.gca().invert_yaxis()
 plt.gca().grid(True)
 plt.xlabel("Distance - Time for Distance: %s" % timestr)
 plt.ylabel('Pace')
-plt.yticks(np.arange(min(S), max(S)+1, 0.5))
+plt.yticks(np.arange(min(S), max(S)+1, 1))
 
 plt.subplot(3, 1, 2)
-#plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
-plt.plot(MMR[1],MMR[2], 'r')
-#plt.gca().invert_yaxis()
+plt.title('Maximal Pace')
+plt.axvspan(0, distsel, color='b', alpha=0.25, lw=2)
+plt.plot(MMR[1],MMR[2], 'r', lw = 1.5, alpha = 0.8)
+#plt.xscale('log')
 plt.gca().grid(True)
 plt.xlabel("Distance")
 plt.ylabel('Pace')
@@ -196,12 +206,13 @@ plt.yticks(np.arange(min(MMR[2]), max(MMR[2])+1, 1))
 
 
 plt.subplot(3, 1, 3)
-#plt.axvspan(a, b, color='r', alpha=0.1, lw=2)
-plt.plot(MMR[1],MMR[0], 'g')
-#plt.gca().invert_yaxis()
+plt.title('Minimal Time')
+plt.axvspan(0, distsel, color='b', alpha=0.25, lw=2)
+plt.plot(MMR[1],MMR[0], 'g', lw = 1.5, alpha = 0.8)
+#plt.xscale('log')
 plt.gca().grid(True)
 plt.xlabel("Distance")
 plt.ylabel('Time')
 plt.yticks(np.arange(min(MMR[0]), max(MMR[0])+1, 5))
-
+plt.tight_layout()
 plt.show()
